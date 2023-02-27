@@ -1,0 +1,9 @@
+[package]
+name = "nan_tan"
+version = "0.0.1"
+[dependencies]
+Sui = { local = "../sui/crates/sui-framework" }
+MoveStdlib = { local = "../sui/crates/sui-framework/deps/move-stdlib/",addr_subst = { "std" = "0x1" } }
+[addresses]
+nan_tan = "0x0"
+sui = "0x2"
