@@ -174,12 +174,10 @@ address nan_tan {
 
     #[test]
     public fun test_nft_create() {
-        use std::debug;
-        // create a dummy TxContext for testing
+
         let ctx = &mut tx_context::dummy();
         let admin = @0xBABE;
 
-        // create a sword
         let nft = NanTanNFT {
             id: object::new(ctx),
             name: string::utf8(b"TEST"),
@@ -188,12 +186,9 @@ address nan_tan {
             creator: admin
         };
 
-        // check if accessor functions return correct values
-        debug::print(name(&nft));
         assert!(name(&nft) == &string::utf8(b"TEST"), 1);
         assert!(description(&nft) == &string::utf8(b"Description"), 1);
 
-        // create a dummy address and transfer the sword
         let dummy_address = @0xCAFE;
         transfer::transfer(nft, dummy_address);
     }
@@ -201,51 +196,37 @@ address nan_tan {
     #[test]
     public fun test_mint_to_sender() {
 
-        use std::debug;
-        // create test address representing game admin
         let admin = @0xBABE;
-
-        // first transaction to emulate module initialization
         let scenario_val = test_scenario::begin(admin);
         let scenario = &mut scenario_val;
         {
             init(test_scenario::ctx(scenario));
         };
-        // second transaction to check if the forge has been created
-        // and has initial value of zero swords created
+
         test_scenario::next_tx(scenario, admin);
         {
-            // extract the nftCollection object
-            let nftCollection = test_scenario::take_from_sender<NanTanNFTCollection>(scenario);
-            // verify number of created swords
-            assert!(nft_created(&nftCollection) == 0, 1);
-            assert!(nft_supply(&nftCollection) == MAX_SUPPLY,1);
-            // return the Forge object to the object pool
-            test_scenario::return_to_sender(scenario, nftCollection);
+          
+            let nft_collection = test_scenario::take_from_sender<NanTanNFTCollection>(scenario);
+
+            assert!(nft_created(&nft_collection) == 0, 1);
+            assert!(nft_supply(&nft_collection) == MAX_SUPPLY,1);
+            test_scenario::return_to_sender(scenario, nft_collection);
         };
 
-        // mint nft to sender 
-        // public entry fun mint_to_sender(
-        //     name: vector<u8>,
-        //     description: vector<u8>,
-        //     url: vector<u8>,
-        //     nanTanCollection: &mut NanTanNFTCollection,
-        //     ctx: &mut TxContext
-        // ) 
-        let nftMinter = @0xAABB;
-        test_scenario::next_tx(scenario, nftMinter);
+        let nft_minter = @0xAABB;
+        test_scenario::next_tx(scenario, nft_minter);
         {
-            // extract the nftCollection object
             let nftCollection = test_scenario::take_from_address<NanTanNFTCollection>(scenario,admin);
             let name = b"NanTanNFT";
             let description = b"NanTanNFTDescription";
             let url = b"http://nantannft.com";
             let ctx = test_scenario::ctx(scenario);
+
             mint_to_sender(name,description,url,&mut nftCollection,ctx);
-            // verify number of created swords
+            
             assert!(nft_created(&nftCollection) == 1, 1);
             assert!(nft_supply(&nftCollection) == MAX_SUPPLY,1);
-            // return the Forge object to the object pool
+            
             test_scenario::return_to_address(admin,nftCollection);
         };
 
@@ -253,16 +234,14 @@ address nan_tan {
         let watcher = @0xBBCC;
         test_scenario::next_tx(scenario, watcher);
         {
-            // extract the nftCollection object
-            let nft = test_scenario::take_from_address<NanTanNFT>(scenario,nftMinter);
+            let nft = test_scenario::take_from_address<NanTanNFT>(scenario,nft_minter);
             let name = b"NanTanNFT";
             let description = b"NanTanNFTDescription";
-            // verify number of created swords
+         
             assert!(name(&nft) == &string::utf8(name),1);
             assert!(description(&nft) == &string::utf8(description), 1);
-            debug::print(&nft);
-            // return the Forge object to the object pool
-            test_scenario::return_to_address(nftMinter, nft);
+         
+            test_scenario::return_to_address(nft_minter, nft);
         };
 
         test_scenario::end(scenario_val);
@@ -289,7 +268,6 @@ address nan_tan {
 
     #[test]
     public fun test_update_description() {
-        use std::debug;
         let admin = @0xAAAA;
         let nft_minter = @0xAAAB;
         let scenario_val = test_scenario::begin(admin);
@@ -298,62 +276,40 @@ address nan_tan {
         {
             init(test_scenario::ctx(scenario));
         };
-        // second transaction to check if the forge has been created
-        // and has initial value of zero swords created
         test_scenario::next_tx(scenario, admin);
         {
-            // extract the nftCollection object
-            let nftCollection = test_scenario::take_from_sender<NanTanNFTCollection>(scenario);
-            // verify number of created swords
-            assert!(nft_created(&nftCollection) == 0, 1);
-            assert!(nft_supply(&nftCollection) == MAX_SUPPLY,1);
-            // return the Forge object to the object pool
-            test_scenario::return_to_sender(scenario, nftCollection);
+            let nft_collection = test_scenario::take_from_sender<NanTanNFTCollection>(scenario);
+            assert!(nft_created(&nft_collection) == 0, 1);
+            assert!(nft_supply(&nft_collection) == MAX_SUPPLY,1);
+            test_scenario::return_to_sender(scenario, nft_collection);
         };
  
         test_scenario::next_tx(scenario, nft_minter);
         {
-            // extract the nftCollection object
             let nft_collection = test_scenario::take_from_address<NanTanNFTCollection>(scenario,admin);
             let name = b"NanTanNFT";
             let description = b"NanTanNFTDescription";
             let url = b"http://nantannft.com";
             let ctx = test_scenario::ctx(scenario);
             mint_to_sender(name,description,url,&mut nft_collection,ctx);
-            // verify number of created swords
             assert!(nft_created(&nft_collection) == 1, 1);
             assert!(nft_supply(&nft_collection) == MAX_SUPPLY,1);
-            // return the Forge object to the object pool
             test_scenario::return_to_address(admin,nft_collection);
         };
 
-        // public entry fun update_description(
-        //     nft: &mut NanTanNFT,
-        //     new_description: vector<u8>,
-        //     nanTanCollection: &NanTanNFTCollection,
-        //     ctx: &mut TxContext
-        // )
-
         test_scenario::next_tx(scenario, admin);
         {
-            // extract the nftCollection object
             let nft_collection = test_scenario::take_from_sender<NanTanNFTCollection>(scenario);
             let nft = test_scenario::take_from_address<NanTanNFT>(scenario,nft_minter);
             let description = b"newDescription";
             let ctx = test_scenario::ctx(scenario);
             update_description(&mut nft,description,&nft_collection,ctx);
-            
-            // verify number of created swords
             assert!(description(&nft) ==  &string::utf8(description), 1);
-            debug::print(&nft);
-
-            // return the Forge object to the object pool
             test_scenario::return_to_sender(scenario,nft_collection);
             test_scenario::return_to_address(nft_minter,nft);
         };
 
         test_scenario::end(scenario_val);
-
     }
 
     /// Permanently delete `nft`
@@ -378,8 +334,7 @@ address nan_tan {
         {
             init(test_scenario::ctx(scenario));
         };
-        // second transaction to check if the forge has been created
-        // and has initial value of zero swords created
+       
         test_scenario::next_tx(scenario, admin);
         {
             // extract the nftCollection object
@@ -393,24 +348,20 @@ address nan_tan {
  
         test_scenario::next_tx(scenario, nft_minter);
         {
-            // extract the nftCollection object
+           
             let nft_collection = test_scenario::take_from_address<NanTanNFTCollection>(scenario,admin);
             let name = b"NanTanNFT";
             let description = b"NanTanNFTDescription";
             let url = b"http://nantannft.com";
             let ctx = test_scenario::ctx(scenario);
             mint_to_sender(name,description,url,&mut nft_collection,ctx);
-            // verify number of created swords
             assert!(nft_created(&nft_collection) == 1, 1);
             assert!(nft_supply(&nft_collection) == MAX_SUPPLY,1);
-            // return the Forge object to the object pool
             test_scenario::return_to_address(admin,nft_collection);
         };
 
-        //  public entry fun burn(nft: NanTanNFT, nft_collection: NanTanNFTCollection, ctx: &mut TxContext)
         test_scenario::next_tx(scenario, admin);
         {
-            // extract the nftCollection object
             let nft_collection = test_scenario::take_from_sender<NanTanNFTCollection>(scenario);
             let nft = test_scenario::take_from_address<NanTanNFT>(scenario,nft_minter);
             let ctx = test_scenario::ctx(scenario);
